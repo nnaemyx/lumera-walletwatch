@@ -1,0 +1,366 @@
+import { SigningStargateClient, StargateClient, GasPrice } from "@cosmjs/stargate";
+import { OfflineSigner } from "@cosmjs/proto-signing";
+import { LUMERA_CONFIG, GAS_PRICE } from "./lumera-config";
+import { QueryClient, setupStakingExtension } from "@cosmjs/stargate";
+
+export const createQueryClient = async () => {
+  return await StargateClient.connect(LUMERA_CONFIG.rpc);
+};
+
+export const createSigningClient = async (signer: OfflineSigner) => {
+  return await SigningStargateClient.connectWithSigner(
+    LUMERA_CONFIG.rpc,
+    signer,
+    {
+      gasPrice: GasPrice.fromString(GAS_PRICE),
+    }
+  );
+};
+
+export const getBalance = async (address: string) => {
+  const client = await createQueryClient();
+  const balance = await client.getBalance(
+    address,
+    LUMERA_CONFIG.stakeCurrency.coinMinimalDenom
+  );
+  return balance;
+};
+
+export const getAllBalances = async (address: string) => {
+  const client = await createQueryClient();
+  const balances = await client.getAllBalances(address);
+  return balances;
+};
+
+export const sendTokens = async (
+  signer: OfflineSigner,
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+  memo = ""
+) => {
+  const client = await createSigningClient(signer);
+
+  const amountInMicroDenom = Math.floor(parseFloat(amount) * 1_000_000);
+
+  const result = await client.sendTokens(
+    fromAddress,
+    toAddress,
+    [
+      {
+        denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+        amount: amountInMicroDenom.toString(),
+      },
+    ],
+    {
+      amount: [
+        {
+          denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+          amount: "5000",
+        },
+      ],
+      gas: "200000",
+    },
+    memo
+  );
+
+  return result;
+};
+
+export const getValidators = async () => {
+  try {
+    // Method 1: Try primary REST API endpoint
+    console.log("Fetching validators from Lumera REST API...");
+    const response = await fetch(
+      `${LUMERA_CONFIG.rest}/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100`
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.validators && data.validators.length > 0) {
+        console.log(`✅ Found ${data.validators.length} real validators from Lumera blockchain`);
+        return data.validators;
+      }
+    } else {
+      console.warn(`REST API returned status: ${response.status}`);
+    }
+    
+    // Method 2: Try alternative REST endpoint format
+    console.log("Trying alternative endpoint...");
+    const altResponse = await fetch(
+      `${LUMERA_CONFIG.rest}/staking/validators`
+    );
+    
+    if (altResponse.ok) {
+      const altData = await altResponse.json();
+      if (altData.result && altData.result.length > 0) {
+        console.log(`✅ Found ${altData.result.length} validators from alternative endpoint`);
+        return altData.result;
+      }
+      if (altData.validators && altData.validators.length > 0) {
+        console.log(`✅ Found ${altData.validators.length} validators`);
+        return altData.validators;
+      }
+    }
+    
+    // Method 3: Try RPC endpoint
+    console.log("Trying RPC endpoint...");
+    const rpcResponse = await fetch(
+      `${LUMERA_CONFIG.rpc}/validators`
+    );
+    
+    if (rpcResponse.ok) {
+      const rpcData = await rpcResponse.json();
+      if (rpcData.result?.validators && rpcData.result.validators.length > 0) {
+        console.log(`✅ Found ${rpcData.result.validators.length} validators from RPC`);
+        return rpcData.result.validators;
+      }
+    }
+    
+    console.error("❌ No validators found from any endpoint");
+    throw new Error("No validators found on Lumera network. The network may not have active validators yet, or the endpoints may be unavailable. Please try again later.");
+    
+  } catch (error: any) {
+    console.error("❌ Error fetching validators:", error);
+    if (error.message.includes("No validators found")) {
+      throw error;
+    }
+    throw new Error("Failed to connect to Lumera network. Please check your internet connection and try again.");
+  }
+};
+
+export const getDelegations = async (delegatorAddress: string) => {
+  try {
+    const response = await fetch(
+      `${LUMERA_CONFIG.rest}/cosmos/staking/v1beta1/delegations/${delegatorAddress}`
+    );
+    if (!response.ok) {
+      return [];
+    }
+    const data = await response.json();
+    return data.delegation_responses || [];
+  } catch (error) {
+    console.error("Error fetching delegations:", error);
+    return [];
+  }
+};
+
+export const delegate = async (
+  signer: OfflineSigner,
+  delegatorAddress: string,
+  validatorAddress: string,
+  amount: string
+) => {
+  const client = await createSigningClient(signer);
+
+  const amountInMicroDenom = Math.floor(parseFloat(amount) * 1_000_000);
+
+  const result = await client.delegateTokens(
+    delegatorAddress,
+    validatorAddress,
+    {
+      denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+      amount: amountInMicroDenom.toString(),
+    },
+    {
+      amount: [
+        {
+          denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+          amount: "5000",
+        },
+      ],
+      gas: "250000",
+    }
+  );
+
+  return result;
+};
+
+export const undelegate = async (
+  signer: OfflineSigner,
+  delegatorAddress: string,
+  validatorAddress: string,
+  amount: string
+) => {
+  const client = await createSigningClient(signer);
+
+  const amountInMicroDenom = Math.floor(parseFloat(amount) * 1_000_000);
+
+  const result = await client.undelegateTokens(
+    delegatorAddress,
+    validatorAddress,
+    {
+      denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+      amount: amountInMicroDenom.toString(),
+    },
+    {
+      amount: [
+        {
+          denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+          amount: "5000",
+        },
+      ],
+      gas: "250000",
+    }
+  );
+
+  return result;
+};
+
+export const formatTokenAmount = (
+  amount: string | number,
+  decimals = 6
+): string => {
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+  return (numAmount / Math.pow(10, decimals)).toFixed(decimals);
+};
+
+export interface TransactionDetail {
+  hash: string;
+  height: string;
+  type: string;
+  timestamp: string;
+  amount?: string;
+  denom?: string;
+  from?: string;
+  to?: string;
+  validatorAddress?: string;
+  status: "success" | "pending" | "failed";
+  rawLog?: string;
+  memo?: string;
+}
+
+export const getTransactionHistory = async (address: string): Promise<TransactionDetail[]> => {
+  try {
+    // Fetch sent transactions
+    const sentResponse = await fetch(
+      `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=message.sender='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
+    );
+    
+    // Fetch received transactions
+    const receivedResponse = await fetch(
+      `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=transfer.recipient='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
+    );
+
+    const transactions: TransactionDetail[] = [];
+    
+    // Parse sent transactions
+    if (sentResponse.ok) {
+      const sentData = await sentResponse.json();
+      if (sentData.txs && sentData.txs.length > 0) {
+        const parsedSent = sentData.txs.map((tx: any) => parseTransaction(tx, address));
+        transactions.push(...parsedSent);
+      }
+    }
+    
+    // Parse received transactions
+    if (receivedResponse.ok) {
+      const receivedData = await receivedResponse.json();
+      if (receivedData.txs && receivedData.txs.length > 0) {
+        const parsedReceived = receivedData.txs.map((tx: any) => parseTransaction(tx, address));
+        transactions.push(...parsedReceived);
+      }
+    }
+
+    // Remove duplicates and sort by height (descending)
+    const uniqueTransactions = Array.from(
+      new Map(transactions.map(tx => [tx.hash, tx])).values()
+    );
+    
+    return uniqueTransactions.sort((a, b) => parseInt(b.height) - parseInt(a.height));
+  } catch (error) {
+    console.error("Error fetching transaction history:", error);
+    return [];
+  }
+};
+
+const parseTransaction = (tx: any, userAddress: string): TransactionDetail => {
+  const txResponse = tx.tx_response || tx;
+  const messages = tx.tx?.body?.messages || tx.body?.messages || [];
+  const firstMessage = messages[0] || {};
+  
+  // Extract transaction type
+  const msgType = firstMessage["@type"] || "";
+  let type = msgType.split(".").pop() || "Unknown";
+  
+  // Simplify common types
+  if (type === "MsgSend") type = "Send";
+  if (type === "MsgDelegate") type = "Delegate";
+  if (type === "MsgUndelegate") type = "Undelegate";
+  if (type === "MsgWithdrawDelegatorReward") type = "Claim Rewards";
+  if (type === "MsgBeginRedelegate") type = "Redelegate";
+  
+  // Extract amount and addresses based on message type
+  let amount: string | undefined;
+  let denom: string | undefined;
+  let from: string | undefined;
+  let to: string | undefined;
+  let validatorAddress: string | undefined;
+  
+  if (msgType.includes("MsgSend")) {
+    from = firstMessage.from_address;
+    to = firstMessage.to_address;
+    if (firstMessage.amount && firstMessage.amount.length > 0) {
+      const coin = firstMessage.amount[0];
+      amount = formatTokenAmount(coin.amount, 6);
+      denom = coin.denom;
+    }
+  } else if (msgType.includes("MsgDelegate") || msgType.includes("MsgUndelegate")) {
+    from = firstMessage.delegator_address;
+    validatorAddress = firstMessage.validator_address;
+    if (firstMessage.amount) {
+      amount = formatTokenAmount(firstMessage.amount.amount, 6);
+      denom = firstMessage.amount.denom;
+    }
+  } else if (msgType.includes("MsgWithdrawDelegatorReward")) {
+    from = firstMessage.delegator_address;
+    validatorAddress = firstMessage.validator_address;
+    // Try to extract reward amount from logs
+    try {
+      const logs = JSON.parse(txResponse.raw_log || "[]");
+      if (logs[0]?.events) {
+        const withdrawEvent = logs[0].events.find((e: any) => e.type === "withdraw_rewards");
+        if (withdrawEvent) {
+          const amountAttr = withdrawEvent.attributes.find((a: any) => a.key === "amount");
+          if (amountAttr && amountAttr.value) {
+            const match = amountAttr.value.match(/(\d+)(\w+)/);
+            if (match) {
+              amount = formatTokenAmount(match[1], 6);
+              denom = match[2];
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing reward amount:", e);
+    }
+  }
+  
+  // Determine status
+  let status: "success" | "pending" | "failed" = "success";
+  if (txResponse.code && txResponse.code !== 0) {
+    status = "failed";
+  }
+  
+  // Parse timestamp
+  let timestamp = new Date().toLocaleString();
+  if (txResponse.timestamp) {
+    timestamp = new Date(txResponse.timestamp).toLocaleString();
+  }
+  
+  return {
+    hash: txResponse.txhash || tx.hash || "unknown",
+    height: txResponse.height?.toString() || "0",
+    type,
+    timestamp,
+    amount,
+    denom,
+    from,
+    to,
+    validatorAddress,
+    status,
+    rawLog: txResponse.raw_log,
+    memo: tx.tx?.body?.memo || tx.body?.memo,
+  };
+};
+

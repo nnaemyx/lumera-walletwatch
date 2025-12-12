@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Montserrat, Inter, Geist_Mono } from "next/font/google";
+import { Playfair_Display, Raleway, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/contexts/WalletContext";
 
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const raleway = Raleway({
+  variable: "--font-raleway",
   subsets: ["latin"],
   display: "swap",
   weight: ["300", "400", "500", "600", "700", "800"],
@@ -23,9 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prism - Advanced DeFi Interface",
+  title: "Quantum - Revolutionary DeFi Experience",
   description:
-    "A sophisticated decentralized application for staking, governance, and token management on the Cosmos ecosystem. Transform your DeFi experience with Prism.",
+    "A revolutionary decentralized application for staking, governance, and token management on the Cosmos ecosystem. Experience the quantum leap in DeFi with Quantum.",
 };
 
 export default function RootLayout({
@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${montserrat.variable} ${inter.variable} ${geistMono.variable} antialiased`}
+        className={`${playfair.variable} ${raleway.variable} ${geistMono.variable} antialiased`}
       >
         <WalletProvider>{children}</WalletProvider>
       </body>

@@ -27,17 +27,17 @@ export default function Features() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-[#111118] to-[#0f0f15] rounded-3xl p-7 border-2 border-emerald-500/20 shadow-xl backdrop-blur-md">
-      <h3 className="text-2xl font-bold text-white mb-6 tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
-        Quantum Features
+    <div className="bg-gradient-to-br from-[#111118] to-[#0f0f15] rounded-3xl p-7 border-2 border-red-500/20 shadow-xl backdrop-blur-md">
+      <h3 className="text-2xl font-normal text-white mb-6 tracking-tight uppercase" style={{ fontFamily: 'var(--font-bebas)' }}>
+        Eclipse Features
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {features.map((feature, index) => {
           const colors = [
-            "from-emerald-500 to-emerald-600",
-            "from-teal-500 to-teal-600",
-            "from-green-500 to-green-600",
-            "from-emerald-400 to-teal-500",
+            "from-red-500 to-red-600",
+            "from-rose-500 to-rose-600",
+            "from-pink-500 to-pink-600",
+            "from-red-400 to-rose-500",
           ];
           return (
             <div key={index} className="flex items-start gap-4 group hover:bg-white/5 p-3 rounded-2xl transition-all duration-300">
@@ -45,7 +45,7 @@ export default function Features() {
                 <feature.icon className="text-white" size={24} />
               </div>
               <div>
-                <h4 className="font-bold text-white text-base mb-1" style={{ fontFamily: 'var(--font-playfair)' }}>
+                <h4 className="font-bold text-white text-base mb-1" style={{ fontFamily: 'var(--font-bebas)' }}>
                   {feature.title}
                 </h4>
                 <p className="text-sm text-gray-300 font-medium leading-relaxed">

@@ -14,12 +14,12 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-[#1e1e2e] bg-[#0a0a0f]/80 backdrop-blur-xl shadow-lg">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 via-teal-500 to-green-500 rounded-2xl flex items-center justify-center shadow-lg glow-primary border-2 border-emerald-400/40">
-            <span className="text-white font-bold text-xl" style={{ fontFamily: 'var(--font-playfair)' }}>Q</span>
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 via-rose-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg glow-primary border-2 border-red-400/40">
+            <span className="text-white font-normal text-xl" style={{ fontFamily: 'var(--font-bebas)' }}>E</span>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
-              Quantum
+            <h1 className="text-xl font-normal text-white tracking-tight uppercase" style={{ fontFamily: 'var(--font-bebas)' }}>
+              Eclipse
             </h1>
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
               Staking & Governance
@@ -48,8 +48,8 @@ export default function Header() {
             <button
               onClick={connect}
               disabled={isLoading}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl transition-all duration-200 font-bold text-sm shadow-lg glow-primary hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-2 border-emerald-400/40"
-              style={{ fontFamily: 'var(--font-raleway)' }}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl transition-all duration-200 font-bold text-sm shadow-lg glow-primary hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-2 border-red-400/40 uppercase tracking-wider"
+              style={{ fontFamily: 'var(--font-bebas)' }}
             >
               <Wallet size={18} />
               {isLoading ? "Connecting..." : "Connect Keplr"}

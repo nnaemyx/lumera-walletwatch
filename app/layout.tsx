@@ -23,9 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Flux - Fluid DeFi Experience",
+  title: "Lumera Portfolio - Fluid DeFi Experience",
   description:
-    "Flow with the flux of decentralized finance. A fluid platform for staking, governance, and token management on the Cosmos ecosystem. Experience seamless DeFi.",
+    "Lumera Portfolio is a platform for staking, governance, and token management on the Lumera ecosystem. Experience seamless DeFi.",
 };
 
 export default function RootLayout({

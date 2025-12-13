@@ -54,7 +54,7 @@ export default function BalanceCard() {
         <div className="flex items-center justify-between pt-6 border-t border-white/30">
           <span className="text-white/90 text-sm font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-titillium)' }}>LUME</span>
           <span className="text-sm bg-white/20 backdrop-blur-md px-5 py-2 rounded-full font-semibold border-2 border-white/30 text-white shadow-lg" style={{ fontFamily: 'var(--font-titillium)' }}>
-            Lumera Mainnet
+            Lumera Testnet
           </span>
         </div>
       </div>

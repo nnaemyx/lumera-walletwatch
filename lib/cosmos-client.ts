@@ -4,7 +4,15 @@ import { LUMERA_CONFIG, GAS_PRICE } from "./lumera-config";
 import { QueryClient, setupStakingExtension } from "@cosmjs/stargate";
 
 export const createQueryClient = async () => {
-  return await StargateClient.connect(LUMERA_CONFIG.rpc);
+  try {
+    return await StargateClient.connect(LUMERA_CONFIG.rpc);
+  } catch (error: any) {
+    console.error("Failed to connect to RPC:", error);
+    if (error.message?.includes("fetch") || error.message?.includes("network")) {
+      throw new Error("Network error: Unable to connect to Lumera Testnet. Please check your internet connection and try again.");
+    }
+    throw new Error(`Failed to connect to Lumera Testnet: ${error.message || "Unknown error"}`);
+  }
 };
 
 export const createSigningClient = async (signer: OfflineSigner) => {
@@ -18,18 +26,33 @@ export const createSigningClient = async (signer: OfflineSigner) => {
 };
 
 export const getBalance = async (address: string) => {
-  const client = await createQueryClient();
-  const balance = await client.getBalance(
-    address,
-    LUMERA_CONFIG.stakeCurrency.coinMinimalDenom
-  );
-  return balance;
+  try {
+    const client = await createQueryClient();
+    const balance = await client.getBalance(
+      address,
+      LUMERA_CONFIG.stakeCurrency.coinMinimalDenom
+    );
+    return balance;
+  } catch (error: any) {
+    console.error("Error fetching balance:", error);
+    // Return zero balance if there's an error (wallet might be new)
+    return {
+      denom: LUMERA_CONFIG.stakeCurrency.coinMinimalDenom,
+      amount: "0",
+    };
+  }
 };
 
 export const getAllBalances = async (address: string) => {
-  const client = await createQueryClient();
-  const balances = await client.getAllBalances(address);
-  return balances;
+  try {
+    const client = await createQueryClient();
+    const balances = await client.getAllBalances(address);
+    return balances;
+  } catch (error: any) {
+    console.error("Error fetching all balances:", error);
+    // Return empty array if there's an error
+    return [];
+  }
 };
 
 export const sendTokens = async (
@@ -232,33 +255,59 @@ export interface TransactionDetail {
 
 export const getTransactionHistory = async (address: string): Promise<TransactionDetail[]> => {
   try {
-    // Fetch sent transactions
-    const sentResponse = await fetch(
-      `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=message.sender='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
-    );
-    
-    // Fetch received transactions
-    const receivedResponse = await fetch(
-      `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=transfer.recipient='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
-    );
+    // Helper function to fetch with timeout
+    const fetchWithTimeout = async (url: string, timeout = 10000): Promise<Response> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error("Request timeout: Network request took too long");
+        }
+        throw error;
+      }
+    };
+
+    // Fetch sent and received transactions in parallel
+    const [sentResponse, receivedResponse] = await Promise.allSettled([
+      fetchWithTimeout(
+        `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=message.sender='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
+      ),
+      fetchWithTimeout(
+        `${LUMERA_CONFIG.rest}/cosmos/tx/v1beta1/txs?events=transfer.recipient='${address}'&order_by=ORDER_BY_DESC&pagination.limit=50`
+      ),
+    ]);
 
     const transactions: TransactionDetail[] = [];
     
     // Parse sent transactions
-    if (sentResponse.ok) {
-      const sentData = await sentResponse.json();
-      if (sentData.txs && sentData.txs.length > 0) {
-        const parsedSent = sentData.txs.map((tx: any) => parseTransaction(tx, address));
-        transactions.push(...parsedSent);
+    if (sentResponse.status === 'fulfilled' && sentResponse.value.ok) {
+      try {
+        const sentData = await sentResponse.value.json();
+        if (sentData.txs && sentData.txs.length > 0) {
+          const parsedSent = sentData.txs.map((tx: any) => parseTransaction(tx, address));
+          transactions.push(...parsedSent);
+        }
+      } catch (parseError) {
+        console.error("Error parsing sent transactions:", parseError);
       }
     }
     
     // Parse received transactions
-    if (receivedResponse.ok) {
-      const receivedData = await receivedResponse.json();
-      if (receivedData.txs && receivedData.txs.length > 0) {
-        const parsedReceived = receivedData.txs.map((tx: any) => parseTransaction(tx, address));
-        transactions.push(...parsedReceived);
+    if (receivedResponse.status === 'fulfilled' && receivedResponse.value.ok) {
+      try {
+        const receivedData = await receivedResponse.value.json();
+        if (receivedData.txs && receivedData.txs.length > 0) {
+          const parsedReceived = receivedData.txs.map((tx: any) => parseTransaction(tx, address));
+          transactions.push(...parsedReceived);
+        }
+      } catch (parseError) {
+        console.error("Error parsing received transactions:", parseError);
       }
     }
 
@@ -268,8 +317,9 @@ export const getTransactionHistory = async (address: string): Promise<Transactio
     );
     
     return uniqueTransactions.sort((a, b) => parseInt(b.height) - parseInt(a.height));
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching transaction history:", error);
+    // Return empty array on error (wallet might be new or network issue)
     return [];
   }
 };

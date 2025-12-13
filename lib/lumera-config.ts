@@ -1,9 +1,9 @@
 // Lumera Blockchain Configuration
 export const LUMERA_CONFIG = {
-  chainId: "lumera-mainnet-1",
-  chainName: "Lumera Mainnet",
-  rpc: "https://rpc.lavenderfive.com:443/lumera",
-  rest: "https://api.lavenderfive.com:443/lumera",
+  chainId: "lumera-testnet-2",
+  chainName: "Lumera Testnet",
+  rpc: "https://rpc.lumera.test.at.htw.tech",
+  rest: "https://api.lumera.test.at.htw.tech",
   bip44: {
     coinType: 118,
   },

@@ -14,15 +14,15 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-[#1e1e2e] bg-[#0a0a0f]/80 backdrop-blur-xl shadow-lg">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-pink-500 via-fuchsia-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg glow-primary border-2 border-pink-400/40">
-            <span className="text-white font-bold text-xl" style={{ fontFamily: 'var(--font-kanit)' }}>F</span>
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg glow-primary border-2 border-blue-400/40">
+            <Wallet className="text-white" size={20} />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--font-kanit)' }}>
-              Flux
+            <h1 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--font-titillium)' }}>
+              Lumera Portfolio
             </h1>
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-              Fluid DeFi Experience
+              Wallet Dashboard
             </p>
           </div>
         </div>
